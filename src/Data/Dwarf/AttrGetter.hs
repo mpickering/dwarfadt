@@ -7,7 +7,6 @@ module Data.Dwarf.AttrGetter
   ) where
 
 import           Control.Applicative (Applicative(..), (<$>))
-import           Control.Lens ((^?))
 import           Control.Monad (liftM)
 import           Control.Monad.Trans.Class (MonadTrans(..))
 import           Control.Monad.Trans.Reader (ReaderT(..))
@@ -21,7 +20,6 @@ import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import           Data.Text (Text)
 import qualified Data.Text as Text
-import           TextShow (TextShow(..))
 
 newtype AttrGetterT m a = AttrGetterT (ReaderT Text (StateT [(DW_AT, DW_ATVAL)] m) a)
   deriving (Functor, Applicative, Monad)
@@ -55,17 +53,20 @@ findAttrVal at = AttrGetterT . lift $ do
 
 getATVal :: Text -> Text -> DwarfLens.ATVAL_NamedPrism a -> DW_ATVAL -> a
 getATVal prefix suffix (typName, typ) atval =
-  fromMaybe (error msg) $ atval ^? typ
+  fromMaybe (error msg) $ typ atval
   where
     msg = Text.unpack $ mconcat [prefix, " is: ", showt atval, " but expected: ", typName, suffix]
 
+showt :: Show a => a -> Text
+showt = Text.pack . show
+
 toVal ::
-  (Monad m, Functor f, TextShow a) =>
+  (Monad m, Functor f, Show a) =>
   (a -> AttrGetterT m (f DW_ATVAL)) ->
   a -> DwarfLens.ATVAL_NamedPrism b -> AttrGetterT m (f b)
 toVal finder at prism = do
   suffix <- getSuffix
-  (liftM . fmap) (getATVal (showt at) suffix prism) $ finder at
+  (liftM . fmap) (getATVal (Text.pack $ show at) suffix prism) $ finder at
 
 findAttrs :: Monad m => DW_AT -> DwarfLens.ATVAL_NamedPrism a -> AttrGetterT m [a]
 findAttrs = toVal findAttrVals

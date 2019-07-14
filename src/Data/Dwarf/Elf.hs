@@ -34,9 +34,11 @@ loadElfDwarf endianess filename = do
     <$> get ".debug_info"
     <*> get ".debug_abbrev"
     <*> get ".debug_str"
+    <*> get ".debug_line"
   pure (elf, Dwarf.parseInfo endianess sections)
 
-parseElfDwarfADT :: Dwarf.Endianess -> FilePath -> IO (Dwarf, [Dwarf.ADT.Warning])
+parseElfDwarfADT :: Dwarf.Endianess -> FilePath -> IO ((Dwarf, [Dwarf.ADT.Warning]))
+
 parseElfDwarfADT endianess filename = do
   (_elf, (cuDies, dieMap)) <- loadElfDwarf endianess filename
-  pure $ Dwarf.ADT.fromDies dieMap cuDies
+  pure $ (Dwarf.ADT.fromDies dieMap cuDies)

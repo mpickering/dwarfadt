@@ -368,7 +368,7 @@ parseEnumerator die =
   box DW_TAG_enumerator die $
   Enumerator
   <$> getName
-  <*> AttrGetter.getAttr DW_AT_const_value _ATVAL_INT
+  <*> pure 0 -- AttrGetter.getAttr DW_AT_const_value _ATVAL_INT
 
 -- DW_AT_byte_size=(DW_ATVAL_UINT 4)
 -- DW_AT_decl_file=(DW_ATVAL_UINT 11)

@@ -658,12 +658,13 @@ data DefType
   | DefUnionType UnionType
   | DefEnumerationType EnumerationType
   | DefSubroutineType SubroutineType
+  | DefRestrictType
   deriving (Eq, Ord, Show)
 
 data Def
   = DefType DefType
   | DefSubprogram Subprogram
-  | DefVariable (Variable Text)
+  | DefVariable (Variable (Maybe Text))
   deriving (Eq, Ord, Show)
 
 parseDefTypeI :: DIE -> M (Boxed DefType)
@@ -680,12 +681,14 @@ parseDefTypeI die =
   DW_TAG_union_type       -> DefUnionType       <$> parseUnionType (dieChildren die)
   DW_TAG_enumeration_type -> DefEnumerationType <$> parseEnumerationType (dieChildren die)
   DW_TAG_subroutine_type  -> DefSubroutineType  <$> parseSubroutineType (dieChildren die)
+
+  DW_TAG_restrict_type    -> noChildren die $ pure DefRestrictType
   _ -> error $ "unsupported def type: " ++ show die
 
 parseDef :: DIE -> M (Boxed Def)
 parseDef die =
   case dieTag die of
-  DW_TAG_variable -> fmap DefVariable <$> parseVariable die getName
+  DW_TAG_variable -> fmap DefVariable <$> parseVariable die getMName
   DW_TAG_subprogram -> mkBox die $ DefSubprogram <$> parseSubprogram (dieReader die) (dieChildren die)
   _ ->
     (fmap . fmap) DefType .
@@ -704,7 +707,7 @@ data CompilationUnit = CompilationUnit
   , cuLanguage :: Dwarf.DW_LANG
   , cuName :: Text
   , cuCompDir :: Text
-  , cuLowPc :: Word64
+  , cuLowPc :: Maybe Word64
   , cuHighPc :: Maybe Word64
   , cuMRanges :: Maybe Word64
   , cuStmtList :: Word64 -- TODO: Parse this further
@@ -721,7 +724,7 @@ parseCU dieMap die =
   <*> (Dwarf.dw_lang <$> AttrGetter.getAttr DW_AT_language _ATVAL_UINT)
   <*> getName
   <*> AttrGetter.getAttr DW_AT_comp_dir _ATVAL_STRING
-  <*> getLowPC
+  <*> getMLowPC
   <*> getMHighPC
   <*> getMRanges
   <*> AttrGetter.getAttr DW_AT_stmt_list _ATVAL_UINT

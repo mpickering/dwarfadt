@@ -38,8 +38,7 @@ import           Data.Dwarf (DieID, DIEMap, DIE(..), DW_TAG(..), DW_AT(..), DW_A
 import qualified Data.Dwarf as Dwarf
 import           Data.Dwarf.AttrGetter (AttrGetterT)
 import qualified Data.Dwarf.AttrGetter as AttrGetter
-import           Data.Dwarf.Matchers (_ATVAL_INT, _ATVAL_UINT, _ATVAL_REF, _ATVAL_STRING, _ATVAL_BOOL)
-import           Data.Int (Int64)
+import           Data.Dwarf.Matchers (_ATVAL_UINT, _ATVAL_REF, _ATVAL_STRING, _ATVAL_BOOL)
 import           Data.List (intercalate)
 import           Data.Map (Map)
 import qualified Data.Map as Map
@@ -358,7 +357,7 @@ parseUnionType children =
 -- DW_AT_const_value=(DW_ATVAL_INT 0)
 data Enumerator = Enumerator
   { enumeratorName :: Text
-  , enumeratorConstValue :: Int64
+  , enumeratorConstValue :: Word64
   } deriving (Eq, Ord, Show)
 
 parseEnumerator :: DIE -> M (Boxed Enumerator)
@@ -366,7 +365,7 @@ parseEnumerator die =
   box DW_TAG_enumerator die $
   Enumerator
   <$> getName
-  <*> AttrGetter.getAttr DW_AT_const_value _ATVAL_INT
+  <*> AttrGetter.getAttr DW_AT_const_value _ATVAL_UINT
 
 -- DW_AT_byte_size=(DW_ATVAL_UINT 4)
 -- DW_AT_decl_file=(DW_ATVAL_UINT 11)
